@@ -539,11 +539,19 @@ function items:LoadBagItems(ctx, kind, bagList, includeEquipment, callback)
 			local size = C_Container.GetContainerNumSlots(bagid)
 			if size and size > 0 then
 				for slotid = 1, size do
-					local data = {}
-					---@cast data +ItemData
-					data.bagid, data.slotid = bagid, slotid
-					self:AttachItemInfo(data, kind)
-					itemData[self:GetSlotKey(data)] = data
+					-- Skip empty keyring slots (Classic only; the keyring bag doesn't exist on
+					-- modern clients, where Enum.BagIndex.Keyring is nil and this check is inert).
+					-- Keyring slots holding an actual item still process normally.
+					local isEmptyKeyringSlot = Enum.BagIndex.Keyring
+						and bagid == Enum.BagIndex.Keyring
+						and not C_Container.GetContainerItemID(bagid, slotid)
+					if not isEmptyKeyringSlot then
+						local data = {}
+						---@cast data +ItemData
+						data.bagid, data.slotid = bagid, slotid
+						self:AttachItemInfo(data, kind)
+						itemData[self:GetSlotKey(data)] = data
+					end
 				end
 			end
 		end
